@@ -1,0 +1,13 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const attendanceController_js_1 = require("../controllers/attendanceController.js");
+const router = (0, express_1.Router)();
+router.post('/rfid-scan', attendanceController_js_1.AttendanceController.rfidScan);
+router.post('/dynamic-qr', attendanceController_js_1.AttendanceController.dynamicQrScan);
+router.post('/geofence', attendanceController_js_1.AttendanceController.geofenceCheckIn);
+router.post('/override', attendanceController_js_1.AttendanceController.manualOverride);
+router.get('/rotate-qr/:lectureId', attendanceController_js_1.AttendanceController.rotateQr);
+router.post('/appeal', attendanceController_js_1.AttendanceController.submitAppeal);
+router.post('/reset-demo', attendanceController_js_1.AttendanceController.resetData);
+exports.default = router;

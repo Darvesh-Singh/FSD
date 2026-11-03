@@ -1,0 +1,14 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const store_js_1 = require("./store.js");
+console.log('🌱 Seeding University Smart Attendance System database...');
+store_js_1.dbStore.reset();
+console.log('✅ Seeding completed successfully!');
+console.log(`Departments: ${store_js_1.dbStore.departments.length}`);
+console.log(`Courses: ${store_js_1.dbStore.courses.length}`);
+console.log(`Sections: ${store_js_1.dbStore.sections.length}`);
+console.log(`Users: ${store_js_1.dbStore.users.length}`);
+console.log(`Lectures: ${store_js_1.dbStore.lectures.length}`);
+console.log(`Attendance Logs: ${store_js_1.dbStore.attendanceLogs.length}`);
+console.log(`Absence Appeals: ${store_js_1.dbStore.absenceAppeals.length}`);
+console.log(`Warning Letters: ${store_js_1.dbStore.warningLetters.length}`);

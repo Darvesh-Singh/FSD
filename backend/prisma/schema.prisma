@@ -1,0 +1,206 @@
+// Prisma schema for University Smart Attendance System
+// Optimized for academic hierarchy: Department -> Course -> Section -> Lecture -> Enrollment -> AttendanceLog
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserRole {
+  ADMIN
+  PROFESSOR
+  STUDENT
+}
+
+enum AttendanceStatus {
+  PRESENT
+  LATE
+  ABSENT
+  EXCUSED
+}
+
+enum CheckInMethod {
+  RFID_SCAN
+  DYNAMIC_QR
+  GEOFENCE_GPS
+  MANUAL_OVERRIDE
+  SYSTEM_AUTO
+}
+
+enum LectureStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum AppealStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum WarningStage {
+  STAGE_1_CAUTION
+  STAGE_2_PROBATION
+  STAGE_3_DEBARMENT
+}
+
+model Department {
+  id               String       @id @default(uuid())
+  code             String       @unique
+  name             String
+  building         String
+  headOfDepartment String
+  courses          Course[]
+  users            User[]
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+}
+
+model Course {
+  id             String         @id @default(uuid())
+  code           String         @unique
+  title          String
+  departmentId   String
+  department     Department     @relation(fields: [departmentId], references: [id])
+  credits        Int            @default(3)
+  semester       String
+  description    String?
+  sections       Section[]
+  warningLetters AcademicWarningLetter[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+}
+
+model Section {
+  id           String         @id @default(uuid())
+  sectionCode  String
+  courseId     String
+  course       Course         @relation(fields: [courseId], references: [id])
+  instructorId String
+  instructor   User           @relation("InstructorSections", fields: [instructorId], references: [id])
+  capacity     Int            @default(60)
+  defaultRoom  String
+  scheduleTime String
+  lectures     Lecture[]
+  enrollments  Enrollment[]
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@unique([courseId, sectionCode])
+}
+
+model User {
+  id             String         @id @default(uuid())
+  universityId   String         @unique
+  name           String
+  email          String         @unique
+  role           UserRole       @default(STUDENT)
+  departmentId   String
+  department     Department     @relation(fields: [departmentId], references: [id])
+  rfidBadgeId    String?        @unique
+  classYear      String?        // Freshman, Sophomore, Junior, Senior
+  avatarUrl      String?
+  gpa            Float?         @default(3.5)
+  phone          String?
+  sectionsTaught Section[]      @relation("InstructorSections")
+  enrollments    Enrollment[]
+  attendanceLogs AttendanceLog[]
+  appeals        AbsenceAppeal[]
+  warningLetters AcademicWarningLetter[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+}
+
+model Enrollment {
+  id         String       @id @default(uuid())
+  studentId  String
+  student    User         @relation(fields: [studentId], references: [id])
+  sectionId  String
+  section    Section      @relation(fields: [sectionId], references: [id])
+  enrolledAt DateTime     @default(now())
+  status     String       @default("ACTIVE")
+
+  @@unique([studentId, sectionId])
+}
+
+model Lecture {
+  id                   String          @id @default(uuid())
+  sectionId            String
+  section              Section         @relation(fields: [sectionId], references: [id])
+  title                String
+  date                 String          // YYYY-MM-DD
+  startTime            String          // HH:mm or ISO
+  endTime              String          // HH:mm or ISO
+  hall                 String
+  geofenceLat          Float           @default(37.774929)
+  geofenceLng          Float           @default(-122.419416)
+  geofenceRadiusMeters Float           @default(65.0)
+  dynamicQrSecret      String?
+  dynamicQrCode        String?
+  dynamicQrExpiresAt   DateTime?
+  status               LectureStatus   @default(SCHEDULED)
+  gracePeriodMinutes   Int             @default(10)
+  lateCutoffMinutes    Int             @default(25)
+  attendanceLogs       AttendanceLog[]
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+}
+
+model AttendanceLog {
+  id                     String           @id @default(uuid())
+  lectureId              String
+  lecture                Lecture          @relation(fields: [lectureId], references: [id])
+  studentId              String
+  student                User             @relation(fields: [studentId], references: [id])
+  status                 AttendanceStatus @default(ABSENT)
+  checkInTime            DateTime?
+  checkInMethod          CheckInMethod    @default(SYSTEM_AUTO)
+  deviceIp               String?
+  gpsLat                 Float?
+  gpsLng                 Float?
+  distanceFromHallMeters Float?
+  verifiedByInstructor   Boolean          @default(false)
+  notes                  String?
+  appeals                AbsenceAppeal[]
+  createdAt              DateTime         @default(now())
+  updatedAt              DateTime         @updatedAt
+
+  @@unique([lectureId, studentId])
+}
+
+model AbsenceAppeal {
+  id              String         @id @default(uuid())
+  attendanceLogId String
+  attendanceLog   AttendanceLog  @relation(fields: [attendanceLogId], references: [id])
+  studentId       String
+  student         User           @relation(fields: [studentId], references: [id])
+  reasonCategory  String         // MEDICAL, ACADEMIC_CONFLICT, EMERGENCY, OTHER
+  explanation     String
+  documentUrl     String?
+  status          AppealStatus   @default(PENDING)
+  submittedAt     DateTime       @default(now())
+  reviewedBy      String?
+  reviewerComment String?
+  updatedAt       DateTime       @updatedAt
+}
+
+model AcademicWarningLetter {
+  id                   String       @id @default(uuid())
+  studentId            String
+  student              User         @relation(fields: [studentId], references: [id])
+  courseId             String
+  course               Course       @relation(fields: [courseId], references: [id])
+  attendancePercentage Float
+  thresholdPercentage  Float        @default(75.0)
+  warningStage         WarningStage @default(STAGE_1_CAUTION)
+  status               String       @default("ISSUED")
+  letterBodyHtml       String
+  issuedAt             DateTime     @default(now())
+}
+

@@ -1,0 +1,11 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const reportsController_js_1 = require("../controllers/reportsController.js");
+const router = (0, express_1.Router)();
+router.get('/course-summaries', reportsController_js_1.ReportsController.getCourseSummaries);
+router.get('/at-risk-students', reportsController_js_1.ReportsController.getAtRiskStudents);
+router.post('/warning-letter', reportsController_js_1.ReportsController.issueWarningLetter);
+router.get('/warning-letter/:letterId', reportsController_js_1.ReportsController.getWarningLetter);
+router.get('/student-drilldown/:studentId', reportsController_js_1.ReportsController.getStudentDrillDown);
+exports.default = router;

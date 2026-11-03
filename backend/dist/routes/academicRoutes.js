@@ -1,0 +1,11 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const academicController_js_1 = require("../controllers/academicController.js");
+const router = (0, express_1.Router)();
+router.get('/departments', academicController_js_1.AcademicController.getDepartments);
+router.get('/courses', academicController_js_1.AcademicController.getCourses);
+router.get('/sections', academicController_js_1.AcademicController.getSections);
+router.get('/users', academicController_js_1.AcademicController.getUsers);
+router.get('/lectures', academicController_js_1.AcademicController.getLectures);
+exports.default = router;
